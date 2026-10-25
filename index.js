@@ -544,14 +544,19 @@ function configure (options) {
     let separator = ''
     let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
     const typedArrayType = getTypedArrayType(value)
-    if (typedArrayType !== undefined) {
+    if (typedArrayType !== undefined && (bigint || typedArrayType[0] !== 'B')) {
       res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), join, maximumBreadth, bigint, fail, typedArrayType)
       keys = keys.slice(/** @type {{length: number}} */ (value).length)
       maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
       separator = join
     }
     if (deterministic) {
-      keys = sort(keys, comparator)
+      if (typedArrayType !== undefined && !bigint && typedArrayType[0] === 'B') {
+        const length = /** @type {{length: number}} */ (value).length
+        keys = keys.slice(0, length).concat(sort(keys.slice(length), comparator))
+      } else {
+        keys = sort(keys, comparator)
+      }
     }
     stack.push(value)
     for (let i = 0; i < maximumPropertiesToStringify; i++) {
@@ -661,14 +666,19 @@ function configure (options) {
     let separator = ''
     let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
     const typedArrayType = hasLength ? getTypedArrayType(value) : undefined
-    if (typedArrayType !== undefined) {
+    if (typedArrayType !== undefined && (bigint || typedArrayType[0] !== 'B')) {
       res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), ',', maximumBreadth, bigint, fail, typedArrayType)
       keys = keys.slice(/** @type {{length: number}} */ (value).length)
       maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
       separator = ','
     }
     if (deterministic) {
-      keys = sort(keys, comparator)
+      if (typedArrayType !== undefined && !bigint && typedArrayType[0] === 'B') {
+        const length = /** @type {{length: number}} */ (value).length
+        keys = keys.slice(0, length).concat(sort(keys.slice(length), comparator))
+      } else {
+        keys = sort(keys, comparator)
+      }
     }
     stack.push(value)
     for (let i = 0; i < maximumPropertiesToStringify; i++) {
