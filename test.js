@@ -125,6 +125,32 @@ test('integer and bigint typed arrays retain their formatting',
     assert.end()
   })
 
+test('bigint typed arrays respect omission and strict policies', (assert) => {
+  const omit = stringify.configure({ bigint: false })
+  const insertionOrder = stringify.configure({ bigint: false, deterministic: false })
+  const limited = stringify.configure({ bigint: false, maximumBreadth: 2 })
+  const strict = stringify.configure({ strict: true })
+  const safeStrict = stringify.configure({ safe: true, strict: true })
+  const failure = 'Object can not safely be stringified. Received type bigint'
+  for (const TypedArray of [BigInt64Array, BigUint64Array]) {
+    const value = Object.assign(new TypedArray([1n, 2n]), { z: 3, a: 4, '000': 5 })
+    for (const space of [undefined, 2]) {
+      assert.equal(omit(value, null, space),
+        JSON.stringify({ '000': 5, a: 4, z: 3 }, null, space))
+      assert.equal(insertionOrder(value, null, space),
+        JSON.stringify({ z: 3, a: 4, '000': 5 }, null, space))
+      assert.equal(limited(value, null, space),
+        JSON.stringify({ '...': '3 items not stringified' }, null, space))
+      assert.throws(() => strict(value, null, space), { message: `${failure} (1)` })
+      const firstError = `Error: Stringification failed (${failure} (1))`
+      const secondError = `Error: Stringification failed (${failure} (2))`
+      assert.equal(safeStrict(value, null, space),
+        JSON.stringify({ 0: firstError, 1: secondError, '000': 5, a: 4, z: 3 }, null, space))
+    }
+  }
+  assert.end()
+})
+
 /**
  * @param {string} key
  * @param {unknown} value
